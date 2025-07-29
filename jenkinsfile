@@ -1,53 +1,48 @@
-pipeline{
+pipeline {
     agent any
-    parameters{
-        string(name: "frontend_image", defaultValue:'',description:"frontendimage")
-        string(name: "backend_image", defaultValue:'',description:"backendimage")
-        string(name: "frontend_tag", defaultValue:'',description:"frontendtag")
-        string(name: "backend_tag", defaultValue:'',description:"backendtag")
+    parameters {
+        string(name: "frontend_image", defaultValue: '', description: "frontendimage")
+        string(name: "backend_image", defaultValue: '', description: "backendimage")
+        string(name: "frontend_tag", defaultValue: '', description: "frontendtag")
+        string(name: "backend_tag", defaultValue: '', description: "backendtag")
     }
-    stages{
-        stage("code checkout"){
-            steps{
-                git url: 'https://github.com/vijayakhil13/2-tier-apps__.git',branch:'main'
-        }}
-        stage('docker build'){
-               parallel{
-                frontend:{
-                steps{
-                script{
-                def frontend_tag= params.frontend_tag
-                sh "docker build -t ${params.frontend_image}:${frontend_tag} ./frontend"
-                }}
+    stages {
+        stage("code checkout") {
+            steps {
+                git url: 'https://github.com/vijayakhil13/2-tier-apps__.git', branch: 'main'
             }
-            backend:{
-                    steps{
-                        script{
-                            def backend_tag= params.backend_tag
-                            sh "docker build -t ${params.backend_image}:${backend_tag} ./backend"
-                }}
-            }}}
-        stage("push image"){ 
-            steps{
-                script{
-            def backend_tag= params.backend_tag
-            def frontend_tag= params.frontend_tag
-         withDockerRegistry(crededitalsId:'docker', url:'https://index.docker.io/v1/'){
-            sh "docker push ${params.frontend_image}:${frontend_tag}"
-            sh "docker push ${params.backend_image}:${backend_tag}"
-            }
-            }
-         }
         }
-
-stage("update K8"){
-    
-steps{
-    script{
-    def frontend_tag= params.frontend_tag
-    def backend_tag= params.backend_tag
-    sh "kubectl set image  deployment/frontend container=${params.frontend_image}:${frontend_tag}"
-    sh "kubectl set image deployment/backend container=${parames.backend_image}:${backend_tag}"
+        stage('docker build') {
+            steps {
+                script {
+                    parallel(
+                        frontend: {
+                            sh "docker build -t ${params.frontend_image}:${params.frontend_tag} ./frontend"
+                        },
+                        backend: {
+                            sh "docker build -t ${params.backend_image}:${params.backend_tag} ./backend"
+                        }
+                    )
+                }
+            }
+        }
+        stage("push image") {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker', url: 'https://index.docker.io/v1/') {
+                        sh "docker push ${params.frontend_image}:${params.frontend_tag}"
+                        sh "docker push ${params.backend_image}:${params.backend_tag}"
+                    }
+                }
+            }
+        }
+        stage("update K8") {
+            steps {
+                script {
+                    sh "kubectl set image deployment/frontend container=${params.frontend_image}:${params.frontend_tag}"
+                    sh "kubectl set image deployment/backend container=${params.backend_image}:${params.backend_tag}"
+                }
+            }
+        }
     }
 }
-}}}
