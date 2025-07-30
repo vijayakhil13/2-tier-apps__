@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: 
+        image: vineethvinni/2-tier-app-frontend:v1
         ports:
         - containerPort: 5000
 
