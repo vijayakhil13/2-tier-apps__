@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect
 import requests
 
 app = Flask(__name__)
-BACKEND_URL = 'http://backend-service:5001'
+BACKEND_URL = 'http://localhost:5001'
 @app.route('/tasks')
 def show_tasks():
     # similar logic as your index() function
